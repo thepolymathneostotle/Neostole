@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  username  String  @unique
+  password  String
+  name      String?
+  bio       String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  articles  Article[]
+  comments  Comment[]
+  ratings   Rating[]
+}
+
+// Article model
+model Article {
+  id        Int     @id @default(autoincrement())
+  title     String
+  slug      String  @unique
+  content   String
+  excerpt   String?
+  published Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign keys
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Relations
+  comments  Comment[]
+  ratings   Rating[]
+
+  @@index([authorId])
+}
+
+// Comment model
+model Comment {
+  id        Int     @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign keys
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId Int
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([articleId])
+}
+
+// Rating model
+model Rating {
+  id        Int     @id @default(autoincrement())
+  score     Int     // e.g., 1-5 stars
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign keys
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId Int
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  // Ensure one rating per user per article
+  @@unique([userId, articleId])
+  @@index([userId])
+  @@index([articleId])
+}
